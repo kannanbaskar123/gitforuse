@@ -1,0 +1,24 @@
+<!-- save this as clipboard-test.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clipboard Test</title>
+</head>
+<body>
+  <textarea id="text-to-copy">Hello, this is the text to copy!</textarea>
+  <button id="copy-button">Copy to Clipboard</button>
+
+  <script>
+    // JavaScript for copying text to clipboard
+    const copyButton = document.getElementById('copy-button');
+    const textToCopy = document.getElementById('text-to-copy');
+
+    copyButton.addEventListener('click', () => {
+      textToCopy.select();
+      document.execCommand('copy');
+    });
+  </script>
+</body>
+</html>
