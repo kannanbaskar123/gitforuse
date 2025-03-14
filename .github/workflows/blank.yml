@@ -1,67 +1,33 @@
-name: Cypress offline workshops tests
-
-on: 
-  push:
-    branches:
-      - main
-  workflow_dispatch:
-
+name: Cypress Tests
+on: [push]
 jobs:
   cypress-run:
-    runs-on: depot-ubuntu-24.04
+    runs-on: ubuntu-latest
+    # Runs tests in parallel with matrix strategy https://docs.cypress.io/guides/guides/parallelization
+    # https://docs.github.com/en/actions/using-jobs/using-a-matrix-for-your-jobs
+    # Also see warning here https://github.com/cypress-io/github-action#parallel
     strategy:
-      max-parallel: 1
+      fail-fast: false # https://github.com/cypress-io/github-action/issues/48
       matrix:
-        node-version: [20.x]  
+        containers: [1, 2] # Uses 2 parallel instances
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
+        uses: actions/checkout@v4
+      - name: Cypress run
+        # Uses the official Cypress GitHub action https://github.com/cypress-io/github-action
+        uses: cypress-io/github-action@v6
         with:
-          node-version: ${{ matrix.node-version }}
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2.0.1
-        with:
-          version: 7
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v3
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Cache Cypress Binary
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/Cypress
-          key: cypress-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            cypress-${{ runner.os }}-
-
-      - name: Install Cypress
-        run: npx cypress install
-        shell: bash
-
-      - name: Verify Cypress Installation
-        run: npx cypress verify
-        shell: bash
-
-      - name: Run lmstests
-        run: 
-        shell: bash
-        
+          # Starts web server for E2E tests - replace with your own server invocation
+          # https://docs.cypress.io/guides/continuous-integration/introduction#Boot-your-server
+          start: npm start
+          wait-on: 'http://localhost:3000' # Waits for above
+          # Records to Cypress Cloud 
+          # https://docs.cypress.io/guides/cloud/projects#Set-up-a-project-to-record
+          record: true
+          parallel: true # Runs test in parallel using settings above
+        env:
+          # For recording and parallelization to work you must set your CYPRESS_RECORD_KEY
+          # in GitHub repo → Settings → Secrets → Actions
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          # Creating a token https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
